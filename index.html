@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Påmelding - RetroHub</title>
+    <title>Påmelding - RetroHub Kveldsgaming</title>
     <style>
         * { box-sizing: border-box; }
         body {font-family: Arial, Helvetica, sans-serif;max-width: 850px;margin: 40px auto;padding: 20px;background: #f9f9f9;color: #333;}
@@ -29,18 +29,20 @@
         body.dark .admin-panel, body.dark li {background: #1e1e1e;}
         .slett {color: #dc3545;cursor: pointer;font-weight: bold;float:right;}
         .info {text-align: center;font-size: 0.95em;color: #666;margin-top: 40px;}
+        .warning {background:#fff3cd;color:#856404;padding:12px;border-radius:8px;margin:15px 0;text-align:center;font-size:0.95em;}
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>📋 Påmelding til RetroHub</h1>
+        <h1>📋 Påmelding RetroHub Kveldsgaming</h1>
         <div class="top-right-buttons">
             <button id="themeToggle" class="theme-btn">🌙 Dark Mode</button>
             <button id="adminBtn" class="admin-btn-top">🔑 Admin</button>
         </div>
     </div>
- 
+
     <div id="status" class="status">Laster...</div>
+
     <form id="pameldingForm">
         <input type="text" id="navn" placeholder="Barnets fulle navn" required>
         <input type="text" id="forelderNavn" placeholder="Forelders fulle navn" required>
@@ -50,7 +52,7 @@
 
     <div id="adminPanel" class="admin-panel" style="display: none;">
         <div style="background:#fff3cd; padding:12px; border-radius:8px; margin-bottom:15px; display:flex; justify-content:space-between;">
-            ✅ Admin-modus aktivert
+            ✅ Admin-modus aktivert (passord: Hub123)
             <button onclick="skjulAdminPanel()" style="background:none;border:none;font-size:1.4em;cursor:pointer;">✕</button>
         </div>
         <button onclick="tømHeleListen()" style="background:#dc3545;color:white;padding:10px;width:100%;margin-bottom:15px;">🗑️ Tøm hele listen</button>
@@ -58,28 +60,31 @@
 
     <h2>Påmeldte (<span id="antall">0</span> av <span id="maks">20</span>)</h2>
     <ul id="liste"></ul>
-    <p class="info">Listen oppdateres live hvert 3. sekund</p>
+    <p class="info">Maks 20 plasser • Listen lagres i nettleseren</p>
+
+    <div class="warning">
+        ⚠️ Denne versjonen bruker <strong>localStorage</strong> (ingen Google, ingen eksterne tjenester).<br>
+        Listen er kun synlig på denne enheten/nettleseren. Alle som skal melde seg på må bruke samme datamaskin eller mobilen du har åpen.
+    </div>
 
 <script>
 // ====================== INNSTILLINGER ======================
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwUoeatmDbs4Ej4wx_mjCvi5HlmepC_x2_I07zZDaRP6AknaaQPa2U8nQ1XNuJtqE9U/exec";  // ←←← BYTT UT MED DEN NYE URL-EN FRA DEPLOY
 const MAKS_PLASSER = 20;
-const ADMIN_PASSORD = "admin123"; // Bytt dette til noe sikrere!
+const ADMIN_PASSORD = "Hub123";
+const STORAGE_KEY = "retrohub_pameldinger";
 let deltakere = [];
 let erAdmin = false;
 
-// ====================== LAST LIVE LISTE ======================
-async function lastDeltakere() {
-  try {
-    const res = await fetch(GOOGLE_SCRIPT_URL);
-    if (!res.ok) throw new Error("Feil URL eller deploy");
-    deltakere = await res.json();
-  } catch (err) {
-    console.error("Kunne ikke hente liste", err);
-    deltakere = [];
-    document.getElementById('status').innerHTML = `⚠️ Feil: Sjekk at du har oppdatert URL-en`;
-  }
+// ====================== LAST FRA LOCALSTORAGE ======================
+function lastDeltakere() {
+  const lagret = localStorage.getItem(STORAGE_KEY);
+  deltakere = lagret ? JSON.parse(lagret) : [];
   oppdaterSide();
+}
+
+// ====================== LAGRE TIL LOCALSTORAGE ======================
+function lagreDeltakere() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(deltakere));
 }
 
 // ====================== OPPDATER SIDE ======================
@@ -99,7 +104,8 @@ function oppdaterSide() {
 
   const listeEl = document.getElementById('liste');
   listeEl.innerHTML = '';
-  deltakere.forEach(person => {
+
+  deltakere.forEach((person, index) => {
     const li = document.createElement('li');
     li.innerHTML = `
       <span>
@@ -108,22 +114,19 @@ function oppdaterSide() {
         ☎ ${person.forelderTelefon}
         <small style="color:#888"> – ${person.tid}</small>
       </span>
-      ${erAdmin ? `<span class="slett" data-row="${person.row}">Slett</span>` : ''}
+      ${erAdmin ? `<span class="slett" data-index="${index}">Slett</span>` : ''}
     `;
     listeEl.appendChild(li);
   });
 
   // Slett-knapper
   document.querySelectorAll('.slett').forEach(btn => {
-    btn.addEventListener('click', async function() {
-      const row = this.getAttribute('data-row');
+    btn.addEventListener('click', function() {
+      const index = parseInt(this.getAttribute('data-index'));
       if (confirm("Slette denne påmeldingen?")) {
-        await fetch(GOOGLE_SCRIPT_URL, {
-          method: 'POST',
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: 'delete', row: parseInt(row) })
-        });
-        lastDeltakere();
+        deltakere.splice(index, 1);
+        lagreDeltakere();
+        oppdaterSide();
       }
     });
   });
@@ -135,33 +138,32 @@ document.getElementById('adminBtn').addEventListener('click', function() {
   if (passord === ADMIN_PASSORD) {
     erAdmin = true;
     document.getElementById('adminPanel').style.display = 'block';
-    lastDeltakere();
-    alert("✅ Admin-modus aktivert! Slett-knapper vises nå.");
+    oppdaterSide();
+    alert("✅ Admin-modus aktivert!\nDu kan nå slette enkeltpåmeldinger og tømme hele listen.");
   } else {
-    alert("Feil passord!");
+    alert("❌ Feil passord!");
   }
 });
 
 function skjulAdminPanel() {
   erAdmin = false;
   document.getElementById('adminPanel').style.display = 'none';
-  lastDeltakere();
+  oppdaterSide();
 }
 
-async function tømHeleListen() {
-  if (confirm("Slette ALLE påmeldinger? Dette kan ikke angres!")) {
-    await fetch(GOOGLE_SCRIPT_URL, {
-      method: 'POST',
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: 'clear' })
-    });
-    lastDeltakere();
+function tømHeleListen() {
+  if (confirm("🚨 Slette ALLE påmeldinger? Dette kan IKKE angres!")) {
+    deltakere = [];
+    lagreDeltakere();
+    oppdaterSide();
+    alert("Listen er nå tom!");
   }
 }
 
 // ====================== PÅMELDING ======================
-document.getElementById('pameldingForm').addEventListener('submit', async function(e) {
+document.getElementById('pameldingForm').addEventListener('submit', function(e) {
   e.preventDefault();
+
   const navn = document.getElementById('navn').value.trim();
   const forelderNavn = document.getElementById('forelderNavn').value.trim();
   const forelderTelefon = document.getElementById('forelderTelefon').value.trim();
@@ -171,28 +173,29 @@ document.getElementById('pameldingForm').addEventListener('submit', async functi
     return;
   }
 
-  try {
-    const res = await fetch(GOOGLE_SCRIPT_URL, {
-      method: 'POST',
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ navn, forelderNavn, forelderTelefon })
-    });
-    const result = await res.json();
-    if (result.success) {
-      this.reset();
-      alert(`✅ ${navn} er nå påmeldt!`);
-      lastDeltakere();
-    } else {
-      alert("Noe gikk galt – prøv igjen.");
-    }
-  } catch (err) {
-    alert("Kunne ikke koble til Google. Sjekk at du har brukt den NYE URL-en.");
+  // Sjekk om det er plass
+  if (deltakere.length >= MAKS_PLASSER) {
+    alert("Beklager, det er fullt! Du blir ikke lagt til.");
+    return;
   }
+
+  const nyDeltaker = {
+    navn: navn,
+    forelderNavn: forelderNavn,
+    forelderTelefon: forelderTelefon,
+    tid: new Date().toLocaleString('no-NO')
+  };
+
+  deltakere.push(nyDeltaker);
+  lagreDeltakere();
+
+  this.reset();
+  alert(`✅ ${navn} er nå påmeldt!`);
+  oppdaterSide();
 });
 
 // ====================== START ======================
 lastDeltakere();
-setInterval(lastDeltakere, 3000);
 
 // Dark mode
 const themeToggle = document.getElementById('themeToggle');
