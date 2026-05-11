@@ -1,213 +1,208 @@
 <!DOCTYPE html>
 <html lang="no">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Påmelding - RetroHub Kveldsgaming</title>
-    <style>
-        * { box-sizing: border-box; }
-        body {font-family: Arial, Helvetica, sans-serif;max-width: 850px;margin: 40px auto;padding: 20px;background: #f9f9f9;color: #333;}
-        body.dark {background: #121212;color: #e0e0e0;}
-        .header {display: flex;justify-content: space-between;align-items: center;margin-bottom: 20px;}
-        h1 {margin: 0;color: #222;}
-        body.dark h1 {color: #fff;}
-        button {padding: 10px 16px;font-size: 1em;border: none;border-radius: 20px;cursor: pointer;}
-        .theme-btn {background: #555;color: white;}
-        .admin-btn-top {background: #6c757d;color: white;}
-        .status {font-size: 1.5em;text-align: center;padding: 18px;border-radius: 10px;margin: 25px 0;font-weight: bold;}
-        .ledig {background: #d4edda;color: #155724;}
-        .full {background: #f8d7da;color: #721c24;}
-        body.dark .ledig {background: #1e3a2f;color: #a3e6c8;}
-        body.dark .full {background: #3a1e1e;color: #f5a8a8;}
-        form {background: white;padding: 30px;border-radius: 12px;box-shadow: 0 4px 15px rgba(0,0,0,0.1);margin-bottom: 30px;}
-        body.dark form {background: #1e1e1e;box-shadow: 0 4px 15px rgba(0,0,0,0.3);}
-        input[type="text"], input[type="tel"] {width: 100%;padding: 14px;margin: 10px 0;border: 2px solid #ddd;border-radius: 6px;font-size: 1.1em;}
-        body.dark input {background: #2a2a2a;border-color: #444;color: #e0e0e0;}
-        button[type="submit"] {background: #007bff;color: white;padding: 14px;border: none;border-radius: 6px;font-size: 1.1em;cursor: pointer;width: 100%;margin-top: 10px;}
-        button[type="submit"]:hover {background: #0069d9;}
-        .admin-panel, li {background: white;padding: 20px;border-radius: 12px;box-shadow: 0 4px 15px rgba(0,0,0,0.1);margin-bottom: 25px;list-style:none;}
-        body.dark .admin-panel, body.dark li {background: #1e1e1e;}
-        .slett {color: #dc3545;cursor: pointer;font-weight: bold;float:right;}
-        .info {text-align: center;font-size: 0.95em;color: #666;margin-top: 40px;}
-        .warning {background:#fff3cd;color:#856404;padding:12px;border-radius:8px;margin:15px 0;text-align:center;font-size:0.95em;}
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>RetroHub Kveldsgaming</title>
+
+<style>
+
+*{
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Arial, Helvetica, sans-serif;
+    max-width:900px;
+    margin:40px auto;
+    padding:20px;
+    color:white;
+
+    background-image:url('https://scontent.fsvg1-1.fna.fbcdn.net/v/t39.30808-6/558130848_122103717759040570_7246627017352499694_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=2a1932&_nc_ohc=d67TELTAEZUQ7kNvwET_iRJ&_nc_oc=AdpbF5BgTCOxi4PC5Z__m47uuHIEU1_LWxPXTlq8zECK4frcUb_mBSd6ZVLQYZllWWI&_nc_zt=23&_nc_ht=scontent.fsvg1-1.fna&_nc_gid=2nYZok_QNb24o6TqWqER-w&_nc_ss=7b289&oh=00_Af6REk6bT0XWMSKkfLdNUpR5JYXEcldhc7yqE4bgauLTSQ&oe=6A07844B');
+
+    background-size:cover;
+    background-position:center;
+    background-attachment:fixed;
+}
+
+body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.7);
+    z-index:-1;
+}
+
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+}
+
+h1{
+    margin:0;
+}
+
+button{
+    padding:12px 16px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:1em;
+}
+
+.theme-btn{
+    background:#444;
+    color:white;
+}
+
+.admin-btn{
+    background:#007bff;
+    color:white;
+}
+
+.status{
+    padding:20px;
+    border-radius:10px;
+    text-align:center;
+    font-size:1.3em;
+    margin-bottom:20px;
+    font-weight:bold;
+}
+
+.ledig{
+    background:#1d6f42;
+}
+
+.full{
+    background:#8b1e1e;
+}
+
+form,
+.admin-panel,
+li,
+.game-box{
+    background:rgba(0,0,0,0.75);
+    padding:20px;
+    border-radius:12px;
+    backdrop-filter:blur(4px);
+    margin-bottom:20px;
+}
+
+input,
+textarea{
+    width:100%;
+    padding:14px;
+    margin:10px 0;
+    border:none;
+    border-radius:8px;
+    font-size:1em;
+}
+
+textarea{
+    resize:vertical;
+    min-height:80px;
+}
+
+.submit-btn{
+    background:#28a745;
+    color:white;
+    width:100%;
+}
+
+ul{
+    padding:0;
+}
+
+li{
+    list-style:none;
+}
+
+.slett{
+    color:#ff6b6b;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.slettEgen{
+    background:#dc3545;
+    color:white;
+    margin-top:10px;
+}
+
+.info{
+    text-align:center;
+    color:#ddd;
+}
+
+canvas{
+    background:black;
+    border:3px solid #00ff88;
+    display:block;
+    margin:auto;
+}
+
+</style>
+
 </head>
 <body>
-    <div class="header">
-        <h1>📋 Påmelding RetroHub Kveldsgaming</h1>
-        <div class="top-right-buttons">
-            <button id="themeToggle" class="theme-btn">🌙 Dark Mode</button>
-            <button id="adminBtn" class="admin-btn-top">🔑 Admin</button>
-        </div>
+
+<div class="header">
+
+    <h1>🎮 RetroHub Kveldsgaming</h1>
+
+    <div>
+        <button id="themeToggle" class="theme-btn">🌙 Dark Mode</button>
+        <button id="adminBtn" class="admin-btn">🔑 Admin</button>
     </div>
 
-    <div id="status" class="status">Laster...</div>
+</div>
 
-    <form id="pameldingForm">
-        <input type="text" id="navn" placeholder="Barnets fulle navn" required>
-        <input type="text" id="forelderNavn" placeholder="Forelders fulle navn" required>
-        <input type="tel" id="forelderTelefon" placeholder="Forelders telefonnummer" required>
-        <button type="submit">Meld meg på</button>
-    </form>
+<div id="status" class="status">Laster...</div>
 
-    <div id="adminPanel" class="admin-panel" style="display: none;">
-        <div style="background:#fff3cd; padding:12px; border-radius:8px; margin-bottom:15px; display:flex; justify-content:space-between;">
-            ✅ Admin-modus aktivert (passord: Hub123)
-            <button onclick="skjulAdminPanel()" style="background:none;border:none;font-size:1.4em;cursor:pointer;">✕</button>
-        </div>
-        <button onclick="tømHeleListen()" style="background:#dc3545;color:white;padding:10px;width:100%;margin-bottom:15px;">🗑️ Tøm hele listen</button>
-    </div>
+<form id="pameldingForm">
 
-    <h2>Påmeldte (<span id="antall">0</span> av <span id="maks">20</span>)</h2>
-    <ul id="liste"></ul>
-    <p class="info">Maks 20 plasser • Listen lagres i nettleseren</p>
+    <input type="text" id="navn" placeholder="Barnets fulle navn" required>
 
-    <div class="warning">
-        ⚠️ Denne versjonen bruker <strong>localStorage</strong> (ingen Google, ingen eksterne tjenester).<br>
-        Listen er kun synlig på denne enheten/nettleseren. Alle som skal melde seg på må bruke samme datamaskin eller mobilen du har åpen.
-    </div>
+    <input type="text" id="forelderNavn" placeholder="Forelders fulle navn" required>
 
-<script>
-// ====================== INNSTILLINGER ======================
-const MAKS_PLASSER = 20;
-const ADMIN_PASSORD = "Hub123";
-const STORAGE_KEY = "retrohub_pameldinger";
-let deltakere = [];
-let erAdmin = false;
+    <input type="tel" id="forelderTelefon" placeholder="Forelders telefonnummer" required>
 
-// ====================== LAST FRA LOCALSTORAGE ======================
-function lastDeltakere() {
-  const lagret = localStorage.getItem(STORAGE_KEY);
-  deltakere = lagret ? JSON.parse(lagret) : [];
-  oppdaterSide();
-}
+    <textarea id="bat" placeholder="BAT - Behov / Allergier / Tilstander"></textarea>
 
-// ====================== LAGRE TIL LOCALSTORAGE ======================
-function lagreDeltakere() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(deltakere));
-}
+    <button type="submit" class="submit-btn">Meld meg på</button>
 
-// ====================== OPPDATER SIDE ======================
-function oppdaterSide() {
-  const antall = deltakere.length;
-  document.getElementById('antall').textContent = antall;
-  document.getElementById('maks').textContent = MAKS_PLASSER;
+</form>
 
-  const statusEl = document.getElementById('status');
-  if (antall < MAKS_PLASSER) {
-    statusEl.textContent = `✅ ${MAKS_PLASSER - antall} plasser igjen!`;
-    statusEl.className = 'status ledig';
-  } else {
-    statusEl.textContent = `❌ Det er fullt – venteliste er åpen`;
-    statusEl.className = 'status full';
-  }
+<div id="adminPanel" class="admin-panel" style="display:none;">
 
-  const listeEl = document.getElementById('liste');
-  listeEl.innerHTML = '';
+    <h3>✅ Admin-modus aktivert</h3>
 
-  deltakere.forEach((person, index) => {
-    const li = document.createElement('li');
-    li.innerHTML = `
-      <span>
-        <strong>${person.navn}</strong><br>
-        Forelder: ${person.forelderNavn}<br>
-        ☎ ${person.forelderTelefon}
-        <small style="color:#888"> – ${person.tid}</small>
-      </span>
-      ${erAdmin ? `<span class="slett" data-index="${index}">Slett</span>` : ''}
-    `;
-    listeEl.appendChild(li);
-  });
+    <button onclick="tomListe()" style="background:#dc3545;color:white;width:100%;">
+        🗑️ Tøm hele listen
+    </button>
 
-  // Slett-knapper
-  document.querySelectorAll('.slett').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const index = parseInt(this.getAttribute('data-index'));
-      if (confirm("Slette denne påmeldingen?")) {
-        deltakere.splice(index, 1);
-        lagreDeltakere();
-        oppdaterSide();
-      }
-    });
-  });
-}
+</div>
 
-// ====================== ADMIN ======================
-document.getElementById('adminBtn').addEventListener('click', function() {
-  const passord = prompt("Skriv inn admin-passord:");
-  if (passord === ADMIN_PASSORD) {
-    erAdmin = true;
-    document.getElementById('adminPanel').style.display = 'block';
-    oppdaterSide();
-    alert("✅ Admin-modus aktivert!\nDu kan nå slette enkeltpåmeldinger og tømme hele listen.");
-  } else {
-    alert("❌ Feil passord!");
-  }
-});
+<h2>Påmeldte (<span id="antall">0</span>/20)</h2>
 
-function skjulAdminPanel() {
-  erAdmin = false;
-  document.getElementById('adminPanel').style.display = 'none';
-  oppdaterSide();
-}
+<ul id="liste"></ul>
 
-function tømHeleListen() {
-  if (confirm("🚨 Slette ALLE påmeldinger? Dette kan IKKE angres!")) {
-    deltakere = [];
-    lagreDeltakere();
-    oppdaterSide();
-    alert("Listen er nå tom!");
-  }
-}
+<div class="game-box">
 
-// ====================== PÅMELDING ======================
-document.getElementById('pameldingForm').addEventListener('submit', function(e) {
-  e.preventDefault();
+    <h2>🐍 Retro Snake</h2>
 
-  const navn = document.getElementById('navn').value.trim();
-  const forelderNavn = document.getElementById('forelderNavn').value.trim();
-  const forelderTelefon = document.getElementById('forelderTelefon').value.trim();
+    <canvas id="snake" width="300" height="300"></canvas>
 
-  if (!navn || !forelderNavn || !forelderTelefon) {
-    alert("Alle felt må fylles ut!");
-    return;
-  }
+</div>
 
-  // Sjekk om det er plass
-  if (deltakere.length >= MAKS_PLASSER) {
-    alert("Beklager, det er fullt! Du blir ikke lagt til.");
-    return;
-  }
+<p class="info">
+Maks 20 plasser • Lagres i nettleseren
+</p>
 
-  const nyDeltaker = {
-    navn: navn,
-    forelderNavn: forelderNavn,
-    forelderTelefon: forelderTelefon,
-    tid: new Date().toLocaleString('no-NO')
-  };
+<script src="script.js"></script>
 
-  deltakere.push(nyDeltaker);
-  lagreDeltakere();
-
-  this.reset();
-  alert(`✅ ${navn} er nå påmeldt!`);
-  oppdaterSide();
-});
-
-// ====================== START ======================
-lastDeltakere();
-
-// Dark mode
-const themeToggle = document.getElementById('themeToggle');
-if (localStorage.getItem('theme') === 'dark') {
-  document.body.classList.add('dark');
-  themeToggle.textContent = '☀️ Light Mode';
-}
-themeToggle.addEventListener('click', () => {
-  document.body.classList.toggle('dark');
-  themeToggle.textContent = document.body.classList.contains('dark') ? '☀️ Light Mode' : '🌙 Dark Mode';
-  localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
-});
-</script>
 </body>
 </html>

@@ -1,184 +1,240 @@
-<<<<<<< HEAD
-const SHEET_ID = '1z5SysUHb9qkvStxO7g1mmRZT_4RYYZrKFIWM7qkGzCg';
-// ← BYTT UT MED DIN EKSKE SHEET-ID (den fra Google Sheets-URLen, ikke script-URLen!)
+const MAKS_PLASSER = 20;
+const ADMIN_PASSORD = "Hub123";
 
-function doGet(e) {
-  return ContentService.createTextOutput(JSON.stringify(getDeltakere()))
-    .setMimeType(ContentService.MimeType.JSON);
+let deltakere = [];
+let erAdmin = false;
+
+function lagre(){
+    localStorage.setItem("retrohub", JSON.stringify(deltakere));
 }
 
-function doPost(e) {
-  let data = {};
-    
-  if (e && e.postData && e.postData.getDataAsString) {
-    try {
-      data = JSON.parse(e.postData.getDataAsString());
-    } catch (err) {
-      data = {};
+function last(){
+    const data = localStorage.getItem("retrohub");
+    deltakere = data ? JSON.parse(data) : [];
+    oppdater();
+}
+
+function oppdater(){
+
+    document.getElementById("antall").textContent = deltakere.length;
+
+    const status = document.getElementById("status");
+
+    if(deltakere.length < MAKS_PLASSER){
+        status.textContent = `✅ ${MAKS_PLASSER - deltakere.length} plasser igjen`;
+        status.className = "status ledig";
+    }else{
+        status.textContent = "❌ Fullt";
+        status.className = "status full";
     }
-  }
 
-  // Admin-funksjoner
-  if (data.action === 'delete') {
-    return slettDeltaker(data.row);
-  }
-  if (data.action === 'clear') {
-    return tømHeleListen();
-  }
+    const liste = document.getElementById("liste");
 
-  // Normal påmelding
-  const ss = SpreadsheetApp.openById(SHEET_ID);
-  let sheet = ss.getSheetByName('Påmeldinger');
-  
-  if (!sheet) {
-    sheet = ss.insertSheet('Påmeldinger');
-    sheet.appendRow(['Navn', 'ForelderNavn', 'ForelderTelefon', 'Tidspunkt']);
-  }
+    liste.innerHTML = "";
 
-  sheet.appendRow([data.navn, data.forelderNavn, data.forelderTelefon, new Date()]);
+    deltakere.forEach((person,index)=>{
 
-  return ContentService.createTextOutput(JSON.stringify({success: true}))
-    .setMimeType(ContentService.MimeType.JSON);
-}
+        const li = document.createElement("li");
 
-function getDeltakere() {
-  const ss = SpreadsheetApp.openById(SHEET_ID);
-  const sheet = ss.getSheetByName('Påmeldinger');
-  if (!sheet) return [];
+        li.innerHTML = `
+            <strong>${person.navn}</strong><br>
 
-  const values = sheet.getDataRange().getValues();
-  const deltakere = [];
+            ${erAdmin ? `
+                👨‍👩‍👦 ${person.forelderNavn}<br>
+                ☎ ${person.forelderTelefon}<br>
+                🩺 ${person.bat || 'Ingen info'}<br>
+            ` : ''}
 
-  for (let i = 1; i < values.length; i++) {
-    deltakere.push({
-      navn: values[i][0] || '',
-      forelderNavn: values[i][1] || '',
-      forelderTelefon: values[i][2] || '',
-      tid: values[i][3] ? new Date(values[i][3]).toLocaleString('no-NO') : '',
-      row: i + 1
+            <small>${person.tid}</small><br>
+
+            <button class="slettEgen" onclick="slettMin('${person.kode}')">
+                Slett min påmelding
+            </button>
+
+            ${erAdmin ? `
+                <div class="slett" onclick="slett(${index})">
+                    ❌ Slett
+                </div>
+            ` : ''}
+        `;
+
+        liste.appendChild(li);
+
     });
-  }
-  
-  return deltakere; // eldste øverst → nyeste nederst (som du ville ha)
+
 }
 
-function slettDeltaker(row) {
-  try {
-    const ss = SpreadsheetApp.openById(SHEET_ID);
-    const sheet = ss.getSheetByName('Påmeldinger');
-    if (sheet) sheet.deleteRow(row);
-    return ContentService.createTextOutput(JSON.stringify({success: true}))
-      .setMimeType(ContentService.MimeType.JSON);
-  } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({success: false, message: err.message}))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}
+document.getElementById("pameldingForm").addEventListener("submit",function(e){
 
-function tømHeleListen() {
-  try {
-    const ss = SpreadsheetApp.openById(SHEET_ID);
-    const sheet = ss.getSheetByName('Påmeldinger');
-    if (sheet) {
-      sheet.clearContents();
-      sheet.appendRow(['Navn', 'ForelderNavn', 'ForelderTelefon', 'Tidspunkt']);
+    e.preventDefault();
+
+    if(deltakere.length >= MAKS_PLASSER){
+        alert("Det er fullt!");
+        return;
     }
-    return ContentService.createTextOutput(JSON.stringify({success: true}))
-      .setMimeType(ContentService.MimeType.JSON);
-  } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({success: false, message: err.message}))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-=======
-const SHEET_ID = '1z5SysUHb9qkvStxO7g1mmRZT_4RYYZrKFIWM7qkGzCg';
-// ← BYTT UT MED DIN EKSKE SHEET-ID (den fra Google Sheets-URLen, ikke script-URLen!)
 
-function doGet(e) {
-  return ContentService.createTextOutput(JSON.stringify(getDeltakere()))
-    .setMimeType(ContentService.MimeType.JSON);
-}
+    const navn = document.getElementById("navn").value.trim();
+    const forelderNavn = document.getElementById("forelderNavn").value.trim();
+    const forelderTelefon = document.getElementById("forelderTelefon").value.trim();
+    const bat = document.getElementById("bat").value.trim();
 
-function doPost(e) {
-  let data = {};
-    
-  if (e && e.postData && e.postData.getDataAsString) {
-    try {
-      data = JSON.parse(e.postData.getDataAsString());
-    } catch (err) {
-      data = {};
-    }
-  }
+    const kode = Math.random().toString(36).substring(2,8);
 
-  // Admin-funksjoner
-  if (data.action === 'delete') {
-    return slettDeltaker(data.row);
-  }
-  if (data.action === 'clear') {
-    return tømHeleListen();
-  }
-
-  // Normal påmelding
-  const ss = SpreadsheetApp.openById(SHEET_ID);
-  let sheet = ss.getSheetByName('Påmeldinger');
-  
-  if (!sheet) {
-    sheet = ss.insertSheet('Påmeldinger');
-    sheet.appendRow(['Navn', 'ForelderNavn', 'ForelderTelefon', 'Tidspunkt']);
-  }
-
-  sheet.appendRow([data.navn, data.forelderNavn, data.forelderTelefon, new Date()]);
-
-  return ContentService.createTextOutput(JSON.stringify({success: true}))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function getDeltakere() {
-  const ss = SpreadsheetApp.openById(SHEET_ID);
-  const sheet = ss.getSheetByName('Påmeldinger');
-  if (!sheet) return [];
-
-  const values = sheet.getDataRange().getValues();
-  const deltakere = [];
-
-  for (let i = 1; i < values.length; i++) {
     deltakere.push({
-      navn: values[i][0] || '',
-      forelderNavn: values[i][1] || '',
-      forelderTelefon: values[i][2] || '',
-      tid: values[i][3] ? new Date(values[i][3]).toLocaleString('no-NO') : '',
-      row: i + 1
+        navn,
+        forelderNavn,
+        forelderTelefon,
+        bat,
+        kode,
+        tid:new Date().toLocaleString("no-NO")
     });
-  }
-  
-  return deltakere; // eldste øverst → nyeste nederst (som du ville ha)
-}
 
-function slettDeltaker(row) {
-  try {
-    const ss = SpreadsheetApp.openById(SHEET_ID);
-    const sheet = ss.getSheetByName('Påmeldinger');
-    if (sheet) sheet.deleteRow(row);
-    return ContentService.createTextOutput(JSON.stringify({success: true}))
-      .setMimeType(ContentService.MimeType.JSON);
-  } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({success: false, message: err.message}))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}
+    lagre();
 
-function tømHeleListen() {
-  try {
-    const ss = SpreadsheetApp.openById(SHEET_ID);
-    const sheet = ss.getSheetByName('Påmeldinger');
-    if (sheet) {
-      sheet.clearContents();
-      sheet.appendRow(['Navn', 'ForelderNavn', 'ForelderTelefon', 'Tidspunkt']);
+    alert(`✅ Påmeldt!\n\nDin slettekode:\n${kode}`);
+
+    this.reset();
+
+    oppdater();
+
+});
+
+function slett(index){
+
+    if(confirm("Slette påmeldingen?")){
+
+        deltakere.splice(index,1);
+
+        lagre();
+
+        oppdater();
+
     }
-    return ContentService.createTextOutput(JSON.stringify({success: true}))
-      .setMimeType(ContentService.MimeType.JSON);
-  } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({success: false, message: err.message}))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
->>>>>>> a673aba2fdae3bc87d89c1bce87937943f67b8bc
+
 }
+
+function slettMin(kode){
+
+    const index = deltakere.findIndex(p => p.kode === kode);
+
+    if(index === -1){
+        alert("Fant ikke påmeldingen");
+        return;
+    }
+
+    if(confirm("Vil du slette din påmelding?")){
+
+        deltakere.splice(index,1);
+
+        lagre();
+
+        oppdater();
+
+    }
+
+}
+
+function tomListe(){
+
+    if(confirm("Slette hele listen?")){
+
+        deltakere = [];
+
+        lagre();
+
+        oppdater();
+
+    }
+
+}
+
+document.getElementById("adminBtn").addEventListener("click",()=>{
+
+    const passord = prompt("Admin-passord:");
+
+    if(passord === ADMIN_PASSORD){
+
+        erAdmin = true;
+
+        document.getElementById("adminPanel").style.display = "block";
+
+        oppdater();
+
+        alert("✅ Admin aktivert");
+
+    }else{
+
+        alert("❌ Feil passord");
+
+    }
+
+});
+
+last();
+
+
+
+// ==================== SNAKE GAME ====================
+
+const canvas = document.getElementById("snake");
+const ctx = canvas.getContext("2d");
+
+let snake = [{x:150,y:150}];
+let food = {x:60,y:60};
+let dx = 10;
+let dy = 0;
+
+document.addEventListener("keydown",e=>{
+
+    if(e.key==="ArrowUp"){dx=0;dy=-10;}
+    if(e.key==="ArrowDown"){dx=0;dy=10;}
+    if(e.key==="ArrowLeft"){dx=-10;dy=0;}
+    if(e.key==="ArrowRight"){dx=10;dy=0;}
+
+});
+
+function draw(){
+
+    ctx.clearRect(0,0,300,300);
+
+    ctx.fillStyle="lime";
+
+    snake.forEach(part=>{
+        ctx.fillRect(part.x,part.y,10,10);
+    });
+
+    ctx.fillStyle="red";
+    ctx.fillRect(food.x,food.y,10,10);
+
+    const head = {
+        x:snake[0].x + dx,
+        y:snake[0].y + dy
+    };
+
+    snake.unshift(head);
+
+    if(head.x === food.x && head.y === food.y){
+
+        food = {
+            x:Math.floor(Math.random()*30)*10,
+            y:Math.floor(Math.random()*30)*10
+        };
+
+    }else{
+        snake.pop();
+    }
+
+    if(
+        head.x < 0 ||
+        head.y < 0 ||
+        head.x >= 300 ||
+        head.y >= 300
+    ){
+
+        snake = [{x:150,y:150}];
+
+    }
+
+}
+
+setInterval(draw,100);
