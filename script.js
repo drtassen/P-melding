@@ -174,67 +174,106 @@ last();
 
 
 
-// ==================== SNAKE GAME ====================
+const quizData = [
 
-const canvas = document.getElementById("snake");
-const ctx = canvas.getContext("2d");
+{
+    question:"Hvilket selskap lagde PlayStation?",
+    answers:["Microsoft","Sony","Nintendo","Sega"],
+    correct:1
+},
 
-let snake = [{x:150,y:150}];
-let food = {x:60,y:60};
-let dx = 10;
-let dy = 0;
+{
+    question:"Hva heter hovedpersonen i Zelda-serien?",
+    answers:["Zelda","Mario","Link","Sonic"],
+    correct:2
+},
 
-document.addEventListener("keydown",e=>{
+{
+    question:"Hvilket spill har Creepers?",
+    answers:["Minecraft","Fortnite","Roblox","GTA"],
+    correct:0
+},
 
-    if(e.key==="ArrowUp"){dx=0;dy=-10;}
-    if(e.key==="ArrowDown"){dx=0;dy=10;}
-    if(e.key==="ArrowLeft"){dx=-10;dy=0;}
-    if(e.key==="ArrowRight"){dx=10;dy=0;}
+{
+    question:"Hva heter Nintendos maskot?",
+    answers:["Luigi","Crash","Mario","Kirby"],
+    correct:2
+},
 
-});
+{
+    question:"Hvilket spill er kjent for Victory Royale?",
+    answers:["FIFA","Fortnite","Valorant","Rocket League"],
+    correct:1
+}
 
-function draw(){
+];
 
-    ctx.clearRect(0,0,300,300);
+let currentQuestion = 0;
+let score = 0;
 
-    ctx.fillStyle="lime";
+function loadQuiz(){
 
-    snake.forEach(part=>{
-        ctx.fillRect(part.x,part.y,10,10);
+    const q = quizData[currentQuestion];
+
+    document.getElementById("sporsmal").textContent = q.question;
+
+    const svarDiv = document.getElementById("svar");
+
+    svarDiv.innerHTML = "";
+
+    q.answers.forEach((answer,index)=>{
+
+        const btn = document.createElement("button");
+
+        btn.textContent = answer;
+
+        btn.style.display = "block";
+        btn.style.width = "100%";
+        btn.style.margin = "10px 0";
+        btn.style.background = "#00b894";
+        btn.style.color = "white";
+
+        btn.onclick = ()=>checkAnswer(index);
+
+        svarDiv.appendChild(btn);
+
     });
-
-    ctx.fillStyle="red";
-    ctx.fillRect(food.x,food.y,10,10);
-
-    const head = {
-        x:snake[0].x + dx,
-        y:snake[0].y + dy
-    };
-
-    snake.unshift(head);
-
-    if(head.x === food.x && head.y === food.y){
-
-        food = {
-            x:Math.floor(Math.random()*30)*10,
-            y:Math.floor(Math.random()*30)*10
-        };
-
-    }else{
-        snake.pop();
-    }
-
-    if(
-        head.x < 0 ||
-        head.y < 0 ||
-        head.x >= 300 ||
-        head.y >= 300
-    ){
-
-        snake = [{x:150,y:150}];
-
-    }
 
 }
 
-setInterval(draw,100);
+function checkAnswer(index){
+
+    const q = quizData[currentQuestion];
+
+    if(index === q.correct){
+
+        score++;
+
+        alert("✅ Riktig!");
+
+    }else{
+
+        alert("❌ Feil!");
+
+    }
+
+    currentQuestion++;
+
+    if(currentQuestion >= quizData.length){
+
+        document.getElementById("quiz").innerHTML = `
+            <h2>🎉 Quiz ferdig!</h2>
+            <p>Du fikk ${score} av ${quizData.length} riktige!</p>
+        `;
+
+        return;
+
+    }
+
+    document.getElementById("score").textContent = `Score: ${score}`;
+
+    loadQuiz();
+
+}
+
+loadQuiz();
