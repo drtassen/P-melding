@@ -1,6 +1,6 @@
 const MAKS_PLASSER = 20;
 const ADMIN_PASSORD = "Hub123";
-const WEB_APP_URL = "https://script.google.com/u/0/home/projects/1pzXa1SSbHafqWtkWB8xHUEDMNRhVqX0GQ6TYYfm7kbYZI2lVVNcOPzOe/edit";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz7VAb0JAIfahNMU2UGZu3klcQMoJDGr2s1-oksBdFSFHCNwKdton6sXUuNi9A-9oFu/exec";
 
 let deltakere = [];
 let erAdmin = false;
