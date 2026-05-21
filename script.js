@@ -1,17 +1,33 @@
 const MAKS_PLASSER = 20;
 const ADMIN_PASSORD = "Hub123";
+const WEB_APP_URL = "https://script.google.com/u/0/home/projects/1pzXa1SSbHafqWtkWB8xHUEDMNRhVqX0GQ6TYYfm7kbYZI2lVVNcOPzOe/edit";
 
 let deltakere = [];
 let erAdmin = false;
 
-function lagre(){
-    localStorage.setItem("retrohub", JSON.stringify(deltakere));
+// ====================== NYE FUNKSJONER ======================
+async function hentDeltakere() {
+  try {
+    const res = await fetch(WEB_APP_URL);
+    deltakere = await res.json();
+    oppdater();
+  } catch (e) {
+    console.error("Kunne ikke hente data", e);
+  }
 }
 
-function last(){
-    const data = localStorage.getItem("retrohub");
-    deltakere = data ? JSON.parse(data) : [];
-    oppdater();
+async function sendTilServer(data) {
+  try {
+    const res = await fetch(WEB_APP_URL, {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: { "Content-Type": "application/json" }
+    });
+    return await res.json();
+  } catch (e) {
+    console.error(e);
+    return { success: false };
+  }
 }
 
 function oppdater(){
@@ -64,8 +80,8 @@ function oppdater(){
 
 }
 
-document.getElementById("pameldingForm").addEventListener("submit",function(e){
-
+// ====================== PÅMELDING ======================
+document.getElementById("pameldingForm").addEventListener("submit", async function(e){
     e.preventDefault();
 
     if(deltakere.length >= MAKS_PLASSER){
@@ -78,74 +94,46 @@ document.getElementById("pameldingForm").addEventListener("submit",function(e){
     const forelderTelefon = document.getElementById("forelderTelefon").value.trim();
     const bat = document.getElementById("bat").value.trim();
 
-    const kode = Math.random().toString(36).substring(2,8);
-
-    deltakere.push({
-        navn,
-        forelderNavn,
-        forelderTelefon,
-        bat,
-        kode,
-        tid:new Date().toLocaleString("no-NO")
-    });
-
-    lagre();
-
-    alert(`✅ Påmeldt!\n\nDin slettekode:\n${kode}`);
-
-    this.reset();
-
-    oppdater();
-
-});
-
-function slett(index){
-
-    if(confirm("Slette påmeldingen?")){
-
-        deltakere.splice(index,1);
-
-        lagre();
-
-        oppdater();
-
-    }
-
-}
-
-function slettMin(kode){
-
-    const index = deltakere.findIndex(p => p.kode === kode);
-
-    if(index === -1){
-        alert("Fant ikke påmeldingen");
+    if (!navn || !forelderNavn || !forelderTelefon) {
+        alert("Fyll inn alle feltene");
         return;
     }
 
-    if(confirm("Vil du slette din påmelding?")){
+    const result = await sendTilServer({ navn, forelderNavn, forelderTelefon, bat });
 
-        deltakere.splice(index,1);
-
-        lagre();
-
-        oppdater();
-
+    if (result.success) {
+        alert(`✅ Påmeldt!\n\n${navn} er nå registrert.`);
+        this.reset();
+        hentDeltakere();
+    } else {
+        alert("Noe gikk galt ved påmelding");
     }
+});
 
+async function slett(index){
+    if(confirm("Slette påmeldingen?")){
+        await sendTilServer({ action: "delete", row: deltakere[index].row });
+        hentDeltakere();
+    }
 }
 
-function tomListe(){
-
-    if(confirm("Slette hele listen?")){
-
-        deltakere = [];
-
-        lagre();
-
-        oppdater();
-
+async function slettMin(kode){
+    const person = deltakere.find(p => p.kode === kode);
+    if(!person){
+        alert("Fant ikke påmeldingen");
+        return;
     }
+    if(confirm("Vil du slette din påmelding?")){
+        await sendTilServer({ action: "delete", row: person.row });
+        hentDeltakere();
+    }
+}
 
+async function tomListe(){
+    if(confirm("Slette hele listen?")){
+        await sendTilServer({ action: "clear" });
+        hentDeltakere();
+    }
 }
 
 document.getElementById("adminBtn").addEventListener("click",()=>{
@@ -170,7 +158,7 @@ document.getElementById("adminBtn").addEventListener("click",()=>{
 
 });
 
-last();
+hentDeltakere();
 
 
 
