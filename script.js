@@ -5,7 +5,7 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz7VAb0JAIfahNMU2UG
 let deltakere = [];
 let erAdmin = false;
 
-// ====================== NYE FUNKSJONER ======================
+// ====================== HENT & SEND ======================
 async function hentDeltakere() {
   try {
     const res = await fetch(WEB_APP_URL);
@@ -30,8 +30,8 @@ async function sendTilServer(data) {
   }
 }
 
+// ====================== OPPDATER LISTE ======================
 function oppdater(){
-
     document.getElementById("antall").textContent = deltakere.length;
 
     const status = document.getElementById("status");
@@ -45,11 +45,9 @@ function oppdater(){
     }
 
     const liste = document.getElementById("liste");
-
     liste.innerHTML = "";
 
-    deltakere.forEach((person,index)=>{
-
+    deltakere.forEach((person) => {
         const li = document.createElement("li");
 
         li.innerHTML = `
@@ -63,21 +61,19 @@ function oppdater(){
 
             <small>${person.tid}</small><br>
 
-            <button class="slettEgen" onclick="slettMin('${person.kode}')">
+            <button class="slettEgen" onclick="slettMin('${person.kode || ''}')">
                 Slett min påmelding
             </button>
 
             ${erAdmin ? `
-                <div class="slett" onclick="slett(${index})">
+                <div class="slett" onclick="slett(${person.row})">
                     ❌ Slett
                 </div>
             ` : ''}
         `;
 
         liste.appendChild(li);
-
     });
-
 }
 
 // ====================== PÅMELDING ======================
@@ -110,10 +106,15 @@ document.getElementById("pameldingForm").addEventListener("submit", async functi
     }
 });
 
-async function slett(index){
-    if(confirm("Slette påmeldingen?")){
-        await sendTilServer({ action: "delete", row: deltakere[index].row });
-        hentDeltakere();
+// ====================== SLETT ======================
+async function slett(row){
+    if(confirm("Slette denne påmeldingen?")){
+        const result = await sendTilServer({ action: "delete", row: row });
+        if(result.success){
+            hentDeltakere();
+        } else {
+            alert("Kunne ikke slette");
+        }
     }
 }
 
@@ -124,13 +125,17 @@ async function slettMin(kode){
         return;
     }
     if(confirm("Vil du slette din påmelding?")){
-        await sendTilServer({ action: "delete", row: person.row });
-        hentDeltakere();
+        const result = await sendTilServer({ action: "delete", row: person.row });
+        if(result.success){
+            hentDeltakere();
+        } else {
+            alert("Kunne ikke slette");
+        }
     }
 }
-
+// ====================== ADMIN ======================
 async function tomListe(){
-    if(confirm("Slette hele listen?")){
+    if(confirm("Slette HELE listen?")){
         await sendTilServer({ action: "clear" });
         hentDeltakere();
     }
@@ -157,11 +162,11 @@ document.getElementById("adminBtn").addEventListener("click",()=>{
     }
 
 });
-
+// ====================== START ======================
 hentDeltakere();
 
 
-
+// ====================== QUIZ (uendret) ======================
 const quizData = [
 
 {
