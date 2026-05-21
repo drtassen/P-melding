@@ -18,14 +18,25 @@ async function hentDeltakere() {
 
 async function sendTilServer(data) {
   try {
+    console.log("Sender til server:", data);   // Debug
+
     const res = await fetch(WEB_APP_URL, {
       method: "POST",
       body: JSON.stringify(data),
       headers: { "Content-Type": "application/json" }
     });
-    return await res.json();
+
+    const text = await res.text();           // Les rå svar først
+    console.log("Rått svar fra server:", text);
+
+    const result = JSON.parse(text);
+    console.log("Parsed resultat:", result);
+
+    return result;
+
   } catch (e) {
-    console.error(e);
+    console.error("FEIL ved sending:", e);
+    alert("Teknisk feil: " + e.message);
     return { success: false };
   }
 }
