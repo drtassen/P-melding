@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RetroHub Kveldsgaming</title>
+  <style>
+    /* Behold din stil her - jeg kopierte den du hadde */
+    *{box-sizing:border-box;}
+    body{
+      font-family:Arial, Helvetica, sans-serif;
+      max-width:900px;
+      margin:40px auto;
+      padding:20px;
+      color:white;
+      background-image:url('Hub.jpg');
+      background-size:cover;
+      background-position:center;
+      background-attachment:fixed;
+    }
+    body::before{
+      content:""; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:-1;
+    }
+    /* ... resten av din stil (jeg forkorter her for plass, men lim inn alt du hadde) ... */
+    .status{padding:20px; border-radius:10px; text-align:center; font-size:1.3em; margin-bottom:20px; font-weight:bold;}
+    .ledig{background:#1d6f42;}
+    .full{background:#8b1e1e;}
+    .submit-btn{background:#28a745; color:white; width:100%; padding:14px;}
+    .slett{color:#ff6b6b; cursor:pointer; font-weight:bold;}
+    .slettEgen{background:#dc3545; color:white; margin-top:10px;}
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🎮 RetroHub Kveldsgaming</h1>
+  <button id="adminBtn" class="admin-btn">🔑 Admin</button>
+</div>
+
+<div id="status" class="status">Laster...</div>
+
+<form id="pameldingForm">
+  <input type="text" id="navn" placeholder="Deltager i stredet" required>
+  <input type="text" id="forelderNavn" placeholder="Forelders fulle navn" required>
+  <input type="tel" id="forelderTelefon" placeholder="Forelders telefonnummer" required>
+  <textarea id="bat" placeholder="BAT - Behov / Allergier / Tilstander"></textarea>
+  <button type="submit" class="submit-btn">Meld meg på</button>
+</form>
+
+<div id="adminPanel" class="admin-panel" style="display:none;">
+  <h3>✅ Admin-modus aktivert</h3>
+  <button onclick="tomListe()" style="background:#dc3545;color:white;width:100%;padding:12px;">
+    🗑️ Tøm hele listen
+  </button>
+</div>
+
+<h2>Påmeldte (<span id="antall">0</span>/20)</h2>
+<ul id="liste"></ul>
+
+<!-- Din quiz og resten av HTML-en beholdes -->
+
+<script>
+// ========== KONFIGURASJON ==========
+const WEB_APP_URL = "https://script.google.com/macros/s/DIN_URL_HER/exec"; 
+const ADMIN_PASSORD = "Hub123";
+const MAKS_PLASSER = 20;
+
+let deltakere = [];
+let erAdmin = false;
+
+// ========== HENT DATA ==========
+async function hentDeltakere() {
+  try {
+    const res = await fetch(WEB_APP_URL);
+    deltakere = await res.json();
+    oppdaterListe();
+  } catch (e) {
+    console.error(e);
+    document.getElementById("status").textContent = "Feil ved lasting";
+  }
+}
+
+// ========== SEND TIL SERVER ==========
+async function sendTilServer(data) {
+  try {
+    const res = await fetch(WEB_APP_URL, {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: { "Content-Type": "application/json" }
+    });
+    return await res.json();
+  } catch (e) {
+    console.error(e);
+    return {success: false};
+  }
+}
+
+// ========== OPPDATER LISTE ==========
+function oppdaterListe() {
+  document.getElementById("antall").textContent = deltakere.length;
+
+  const status = document.getElementById("status");
+  if (deltakere.length < MAKS_PLASSER) {
+    status.textContent = `✅ ${MAKS_PLASSER - deltakere.length} plasser igjen`;
+    status.className = "status ledig";
+  } else {
+    status.textContent = "❌ Fullt";
+    status.className = "status full";
+  }
+
+  const liste = document.getElementById("liste");
+  liste.innerHTML = "";
+
+  deltakere.forEach(person => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <strong>${person.navn}</strong><br>
+      ${erAdmin ? `👨‍👩‍👦 ${person.forelderNavn}<br>☎ ${person.forelderTelefon}<br>🩺 ${person.bat || 'Ingen'}<br>` : ''}
+      <small>${person.tid}</small><br>
+      <button class="slettEgen" onclick="slettMin(${person.row})">Slett min påmelding</button>
+      ${erAdmin ? `<span class="slett" onclick="slett(${person.row})">❌ Slett</span>` : ''}
+    `;
+    liste.appendChild(li);
+  });
+}
+
+// ========== PÅMELDING ==========
+document.getElementById("pameldingForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+
+  if (deltakere.length >= MAKS_PLASSER) return alert("Fullt!");
+
+  const data = {
+    navn: document.getElementById("navn").value.trim(),
+    forelderNavn: document.getElementById("forelderNavn").value.trim(),
+    forelderTelefon: document.getElementById("forelderTelefon").value.trim(),
+    bat: document.getElementById("bat").value.trim()
+  };
+
+  const result = await sendTilServer(data);
+  if (result.success) {
+    alert("✅ Påmeldt!");
+    this.reset();
+    hentDeltakere();
+  } else {
+    alert(result.message || "Noe gikk galt");
+  }
+});
+
+// ========== SLETT ==========
+async function slett(row) {
+  if (!confirm("Slette denne?")) return;
+  const res = await sendTilServer({action: "delete", row: row, passord: ADMIN_PASSORD});
+  if (res.success) hentDeltakere();
+}
+
+async function slettMin(row) {
+  if (!confirm("Slette din påmelding?")) return;
+  const res = await sendTilServer({action: "delete", row: row, passord: ADMIN_PASSORD});
+  if (res.success) hentDeltakere();
+}
+
+async function tomListe() {
+  if (!confirm("Tømme HELE listen?")) return;
+  const res = await sendTilServer({action: "clear", passord: ADMIN_PASSORD});
+  if (res.success) hentDeltakere();
+}
+
+// ========== ADMIN ==========
+document.getElementById("adminBtn").addEventListener("click", () => {
+  const pass = prompt("Admin-passord:");
+  if (pass === ADMIN_PASSORD) {
+    erAdmin = true;
+    document.getElementById("adminPanel").style.display = "block";
+    oppdaterListe();
+  } else {
+    alert("Feil passord");
+  }
+});
+
+// Start
+hentDeltakere();
+</script>
+
+</body>
+</html>

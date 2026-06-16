@@ -1,283 +1,102 @@
-const MAKS_PLASSER = 20;
+const SHEET_ID = '1z5SysUHb9qkvStxO7g1mmRZT_4RYYZrKFIWM7qkGzCg';
 const ADMIN_PASSORD = "Hub123";
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz7VAb0JAIfahNMU2UGZu3klcQMoJDGr2s1-oksBdFSFHCNwKdton6sXUuNi9A-9oFu/exec";
+const MAKS_PLASSER = 20;
 
-let deltakere = [];
-let erAdmin = false;
+function doGet(e) {
+  return HtmlService.createHtmlOutputFromFile('Index')
+    .setTitle('RetroHub Kveldsgaming')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
 
-// ====================== HENT & SEND ======================
-async function hentDeltakere() {
+function doPost(e) {
+  let data = {};
   try {
-    const res = await fetch(WEB_APP_URL);
-    deltakere = await res.json();
-    oppdater();
-  } catch (e) {
-    console.error("Kunne ikke hente data", e);
+    data = JSON.parse(e.postData.getDataAsString());
+  } catch (err) {
+    return jsonResponse({success: false, message: "Ugyldig JSON"});
+  }
+
+  // Admin handlinger
+  if (data.action === 'delete' || data.action === 'clear') {
+    if (data.passord !== ADMIN_PASSORD) {
+      return jsonResponse({success: false, message: "Feil passord"});
+    }
+    if (data.action === 'delete') return slettDeltaker(data.row);
+    if (data.action === 'clear') return tømHeleListen();
+  }
+
+  // Ny påmelding
+  if (!data.navn || !data.forelderNavn || !data.forelderTelefon) {
+    return jsonResponse({success: false, message: "Fyll inn navn, forelder og telefon"});
+  }
+
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  let sheet = ss.getSheetByName('Påmeldinger');
+
+  if (!sheet) {
+    sheet = ss.insertSheet('Påmeldinger');
+    sheet.appendRow(['Navn', 'ForelderNavn', 'ForelderTelefon', 'BAT', 'Tidspunkt']);
+  }
+
+  sheet.appendRow([
+    data.navn.trim(),
+    data.forelderNavn.trim(),
+    data.forelderTelefon.trim(),
+    data.bat ? data.bat.trim() : '',
+    new Date()
+  ]);
+
+  return jsonResponse({success: true});
+}
+
+function jsonResponse(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function getDeltakere() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sheet = ss.getSheetByName('Påmeldinger');
+  if (!sheet) return [];
+
+  const values = sheet.getDataRange().getValues();
+  const deltakere = [];
+
+  for (let i = 1; i < values.length; i++) {
+    const r = values[i];
+    deltakere.push({
+      navn: r[0] || '',
+      forelderNavn: r[1] || '',
+      forelderTelefon: r[2] || '',
+      bat: r[3] || '',
+      tid: r[4] ? new Date(r[4]).toLocaleString('no-NO') : '',
+      row: i + 1
+    });
+  }
+  return deltakere;
+}
+
+function slettDeltaker(row) {
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const sheet = ss.getSheetByName('Påmeldinger');
+    if (sheet) sheet.deleteRow(row);
+    return jsonResponse({success: true});
+  } catch (err) {
+    return jsonResponse({success: false, message: err.message});
   }
 }
 
-async function sendTilServer(data) {
+function tømHeleListen() {
   try {
-    console.log("Sender til server:", data);   // Debug
-
-    const res = await fetch(WEB_APP_URL, {
-      method: "POST",
-      body: JSON.stringify(data),
-      headers: { "Content-Type": "application/json" }
-    });
-
-    const text = await res.text();           // Les rå svar først
-    console.log("Rått svar fra server:", text);
-
-    const result = JSON.parse(text);
-    console.log("Parsed resultat:", result);
-
-    return result;
-
-  } catch (e) {
-    console.error("FEIL ved sending:", e);
-    alert("Teknisk feil: " + e.message);
-    return { success: false };
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const sheet = ss.getSheetByName('Påmeldinger');
+    if (sheet) {
+      sheet.clearContents();
+      sheet.appendRow(['Navn', 'ForelderNavn', 'ForelderTelefon', 'BAT', 'Tidspunkt']);
+    }
+    return jsonResponse({success: true});
+  } catch (err) {
+    return jsonResponse({success: false, message: err.message});
   }
 }
-
-// ====================== OPPDATER LISTE ======================
-function oppdater(){
-    document.getElementById("antall").textContent = deltakere.length;
-
-    const status = document.getElementById("status");
-
-    if(deltakere.length < MAKS_PLASSER){
-        status.textContent = `✅ ${MAKS_PLASSER - deltakere.length} plasser igjen`;
-        status.className = "status ledig";
-    }else{
-        status.textContent = "❌ Fullt";
-        status.className = "status full";
-    }
-
-    const liste = document.getElementById("liste");
-    liste.innerHTML = "";
-
-    deltakere.forEach((person) => {
-        const li = document.createElement("li");
-
-        li.innerHTML = `
-            <strong>${person.navn}</strong><br>
-
-            ${erAdmin ? `
-                👨‍👩‍👦 ${person.forelderNavn}<br>
-                ☎ ${person.forelderTelefon}<br>
-                🩺 ${person.bat || 'Ingen info'}<br>
-            ` : ''}
-
-            <small>${person.tid}</small><br>
-
-            <button class="slettEgen" onclick="slettMin('${person.kode || ''}')">
-                Slett min påmelding
-            </button>
-
-            ${erAdmin ? `
-                <div class="slett" onclick="slett(${person.row})">
-                    ❌ Slett
-                </div>
-            ` : ''}
-        `;
-
-        liste.appendChild(li);
-    });
-}
-
-// ====================== PÅMELDING ======================
-document.getElementById("pameldingForm").addEventListener("submit", async function(e){
-    e.preventDefault();
-
-    if(deltakere.length >= MAKS_PLASSER){
-        alert("Det er fullt!");
-        return;
-    }
-
-    const navn = document.getElementById("navn").value.trim();
-    const forelderNavn = document.getElementById("forelderNavn").value.trim();
-    const forelderTelefon = document.getElementById("forelderTelefon").value.trim();
-    const bat = document.getElementById("bat").value.trim();
-
-    if (!navn || !forelderNavn || !forelderTelefon) {
-        alert("Fyll inn alle feltene");
-        return;
-    }
-
-    const result = await sendTilServer({ navn, forelderNavn, forelderTelefon, bat });
-
-    if (result.success) {
-        alert(`✅ Påmeldt!\n\n${navn} er nå registrert.`);
-        this.reset();
-        hentDeltakere();
-    } else {
-        alert("Noe gikk galt ved påmelding");
-    }
-});
-
-// ====================== SLETT ======================
-async function slett(row){
-    if(confirm("Slette denne påmeldingen?")){
-        const result = await sendTilServer({ action: "delete", row: row });
-        if(result.success){
-            hentDeltakere();
-        } else {
-            alert("Kunne ikke slette");
-        }
-    }
-}
-
-async function slettMin(kode){
-    const person = deltakere.find(p => p.kode === kode);
-    if(!person){
-        alert("Fant ikke påmeldingen");
-        return;
-    }
-    if(confirm("Vil du slette din påmelding?")){
-        const result = await sendTilServer({ action: "delete", row: person.row });
-        if(result.success){
-            hentDeltakere();
-        } else {
-            alert("Kunne ikke slette");
-        }
-    }
-}
-// ====================== ADMIN ======================
-async function tomListe(){
-    if(confirm("Slette HELE listen?")){
-        await sendTilServer({ action: "clear" });
-        hentDeltakere();
-    }
-}
-
-document.getElementById("adminBtn").addEventListener("click",()=>{
-
-    const passord = prompt("Admin-passord:");
-
-    if(passord === ADMIN_PASSORD){
-
-        erAdmin = true;
-
-        document.getElementById("adminPanel").style.display = "block";
-
-        oppdater();
-
-        alert("✅ Admin aktivert");
-
-    }else{
-
-        alert("❌ Feil passord");
-
-    }
-
-});
-// ====================== START ======================
-hentDeltakere();
-
-
-// ====================== QUIZ (uendret) ======================
-const quizData = [
-
-{
-    question:"Hvilket selskap lagde PlayStation?",
-    answers:["Microsoft","Sony","Nintendo","Sega"],
-    correct:1
-},
-
-{
-    question:"Hva heter hovedpersonen i Zelda-serien?",
-    answers:["Zelda","Mario","Link","Sonic"],
-    correct:2
-},
-
-{
-    question:"Hvilket spill har Creepers?",
-    answers:["Minecraft","Fortnite","Roblox","GTA"],
-    correct:0
-},
-
-{
-    question:"Hva heter Nintendos maskot?",
-    answers:["Luigi","Crash","Mario","Kirby"],
-    correct:2
-},
-
-{
-    question:"Hvilket spill er kjent for Victory Royale?",
-    answers:["FIFA","Fortnite","Valorant","Rocket League"],
-    correct:1
-}
-
-];
-
-let currentQuestion = 0;
-let score = 0;
-
-function loadQuiz(){
-
-    const q = quizData[currentQuestion];
-
-    document.getElementById("sporsmal").textContent = q.question;
-
-    const svarDiv = document.getElementById("svar");
-
-    svarDiv.innerHTML = "";
-
-    q.answers.forEach((answer,index)=>{
-
-        const btn = document.createElement("button");
-
-        btn.textContent = answer;
-
-        btn.style.display = "block";
-        btn.style.width = "100%";
-        btn.style.margin = "10px 0";
-        btn.style.background = "#00b894";
-        btn.style.color = "white";
-
-        btn.onclick = ()=>checkAnswer(index);
-
-        svarDiv.appendChild(btn);
-
-    });
-
-}
-
-function checkAnswer(index){
-
-    const q = quizData[currentQuestion];
-
-    if(index === q.correct){
-
-        score++;
-
-        alert("✅ Riktig!");
-
-    }else{
-
-        alert("❌ Feil!");
-
-    }
-
-    currentQuestion++;
-
-    if(currentQuestion >= quizData.length){
-
-        document.getElementById("quiz").innerHTML = `
-            <h2>🎉 Quiz ferdig!</h2>
-            <p>Du fikk ${score} av ${quizData.length} riktige!</p>
-        `;
-
-        return;
-
-    }
-
-    document.getElementById("score").textContent = `Score: ${score}`;
-
-    loadQuiz();
-
-}
-
-loadQuiz();
